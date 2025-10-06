@@ -21,6 +21,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 const testRoutes = require('./routes/test.route');
 app.use('/', testRoutes);
 
+const authRoutes = require('./routes/auth.route');
+app.use('/auth', authRoutes);
+
+
 // Health check route (optional but useful)
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running fine' });
