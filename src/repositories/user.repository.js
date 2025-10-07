@@ -55,6 +55,16 @@ class UserRepository {
       throw new Error(`Error retrieving users: ${error.message}`);
     }
   }
+
+  // Bulk insert users (used only for seeding)
+  async bulkInsert(users) {
+    try {
+      return await User.insertMany(users);
+    } catch (error) {
+      throw new Error(`Error bulk inserting users: ${error.message}`);
+    }
+  }
+  
 }
 
 module.exports = new UserRepository();
