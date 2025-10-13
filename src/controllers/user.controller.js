@@ -1,65 +1,120 @@
 // src/controllers/user.controller.js
 const UserRepository = require('../repositories/user.repository');
 const UserDTO = require('../dtos/user.dto');
-const { generateToken } = require('../utils/jwt');
+const { generateToken, verifyToken } = require('../utils/jwt');
+
+// ========== REGISTER ==========
+exports.showRegister = (req, res) => {
+  res.render('register', { title: 'Register', error: null, message: null });
+};
 
 exports.register = async (req, res) => {
   try {
     const { nickname, email, password, gender } = req.body;
-
     if (!nickname || !email || !password) {
-      return res.status(400).json({ message: 'Nickname, email and password are required.' });
+      return res
+        .status(400)
+        .render('register', { title: 'Register', error: 'Nickname, email, and password required.', message: null });
     }
 
     const existing = await UserRepository.findByEmail(email);
-    if (existing) return res.status(409).json({ message: 'Email already registered.' });
+    if (existing) {
+      return res
+        .status(409)
+        .render('register', { title: 'Register', error: 'Email already registered.', message: null });
+    }
 
-    // IMPORTANT: do NOT hash here — model pre-save will hash the password
     const created = await UserRepository.createUser({ nickname, email, password, gender });
-
-    const dto = new UserDTO(created);
     const token = generateToken({ id: created._id, email: created.email });
 
-    return res.status(201).json({ user: dto, token });
+    res.cookie('token', token, {
+      httpOnly: false, // true in production
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.redirect('/user/profile');
   } catch (err) {
     console.error('Register error:', err);
-    return res.status(500).json({ message: 'Server error during registration.' });
+    res
+      .status(500)
+      .render('register', { title: 'Register', error: 'Server error during registration.', message: null });
   }
+};
+
+// ========== LOGIN ==========
+exports.showLogin = (req, res) => {
+  res.render('login', { title: 'Login', error: null, message: null });
 };
 
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: 'Email and password required.' });
+
+    console.log('Login attempt with email:', email);
+    console.log('Login attempt with password:', password);
+    console.log('Cookies on login attempt:', req.cookies);
+    console.log('Headers on login attempt:', req.headers);
+    
+    if (!email || !password)
+      return res.status(400).render('login', { title: 'Login', error: 'Email and password required.', message: null });
 
     const user = await UserRepository.findByEmail(email);
-    if (!user) return res.status(401).json({ message: 'Invalid email or password.' });
+    if (!user || !(await user.comparePassword(password)))
+      return res
+        .status(401)
+        .render('login', { title: 'Login', error: 'Invalid email or password.', message: null });
 
-    const isValid = await user.comparePassword(password);
-    if (!isValid) return res.status(401).json({ message: 'Invalid email or password.' });
-
-    const dto = new UserDTO(user);
     const token = generateToken({ id: user._id, email: user.email });
 
-    return res.json({ user: dto, token });
+    res.cookie('token', token, {
+      httpOnly: false,
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.redirect('/user/profile');
   } catch (err) {
     console.error('Login error:', err);
-    return res.status(500).json({ message: 'Server error during login.' });
+    return res.status(500).render('login', { title: 'Login', error: 'Server error during login.', message: null });
   }
 };
 
+// ========== LOGOUT ==========
+exports.logout = (req, res) => {
+  res.clearCookie('token');
+  return res.render('logout', { title: 'Logged out', message: 'You have been successfully logged out.', error: null });
+};
+
+// ========== PROFILE ==========
 exports.getProfile = async (req, res) => {
   try {
-    const userId = req.user && req.user.id;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
-    const user = await UserRepository.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User not found.' });
+    const user = req.user;
+    if (!user) return res.status(401).redirect('/user/login');
 
     const dto = new UserDTO(user);
-    return res.json(dto);
+    res.render('profile', { title: 'Profile', user: dto, error: null, message: null });
   } catch (err) {
     console.error('Profile error:', err);
-    return res.status(500).json({ message: 'Server error retrieving profile.' });
+    res
+      .status(500)
+      .render('error', { title: 'Error', message: 'Server error retrieving profile.', error: err.message });
+  }
+};
+
+// ========== API LOGIN (optional for Postman testing) ==========
+exports.loginApi = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await UserRepository.findByEmail(email);
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+    const token = generateToken({ id: user._id, email: user.email });
+    res.cookie('token', token, { httpOnly: false, maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax' });
+    return res.json({ success: true, token, user: new UserDTO(user) });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

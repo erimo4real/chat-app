@@ -1,6 +1,8 @@
-﻿<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="/">ChatApp</a>
+﻿<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/">
+      <i class="fa-solid fa-comments"></i> ChatApp
+    </a>
     <button
       class="navbar-toggler"
       type="button"
@@ -12,14 +14,13 @@
     >
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="/">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/health">Health</a>
-        </li>
+
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/user/profile">Profile</a></li>
+        <li class="nav-item"><a class="nav-link" href="/user/login">Login</a></li>
+        <li class="nav-item"><a class="nav-link" href="/user/register">Register</a></li>
       </ul>
     </div>
   </div>

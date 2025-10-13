@@ -2,30 +2,37 @@
 const { verifyToken } = require('../utils/jwt');
 const UserRepository = require('../repositories/user.repository');
 
-module.exports = async (req, res, next) => {
+module.exports = async function authMiddleware(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
+    const token = req.cookies?.token ||
+      (req.headers.authorization?.startsWith('Bearer ')
+        ? req.headers.authorization.split(' ')[1]
+        : null);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Authorization header missing or invalid' });
+    if (!token) {
+      console.warn('No token found in cookies or headers');
+      return res.redirect('/user/login');
     }
 
-    const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
-
     if (!decoded) {
-      return res.status(401).json({ message: 'Invalid or expired token' });
+      console.warn('Token verification failed or expired');
+      res.clearCookie('token');
+      return res.redirect('/user/login');
     }
 
     const user = await UserRepository.findById(decoded.id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      console.warn('User not found for decoded token');
+      res.clearCookie('token');
+      return res.redirect('/user/login');
     }
 
-    req.user = { id: user._id, email: user.email };
+    req.user = user;
     next();
   } catch (err) {
     console.error('Auth middleware error:', err);
-    res.status(500).json({ message: 'Server error verifying token' });
+    res.clearCookie('token');
+    return res.redirect('/user/login');
   }
 };

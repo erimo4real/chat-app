@@ -6,7 +6,7 @@ const UserRepository = require('../src/repositories/user.repository');
 const User = require('../src/models/user.model');
 
 // Database connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chat_app_mvp';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chat_app';
 
 const seedUsers = async () => {
   try {
