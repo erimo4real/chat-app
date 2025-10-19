@@ -50,11 +50,6 @@ exports.showLogin = (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    console.log('Login attempt with email:', email);
-    console.log('Login attempt with password:', password);
-    console.log('Cookies on login attempt:', req.cookies);
-    console.log('Headers on login attempt:', req.headers);
     
     if (!email || !password)
       return res.status(400).render('login', { title: 'Login', error: 'Email and password required.', message: null });
@@ -73,7 +68,7 @@ exports.login = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    return res.redirect('/user/profile');
+    return res.redirect('/chat');
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).render('login', { title: 'Login', error: 'Server error during login.', message: null });
